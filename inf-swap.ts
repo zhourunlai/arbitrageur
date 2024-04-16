@@ -9,7 +9,7 @@ const jitosolMint = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn';
 const solInitAmount = 100000000000;
 const jitosolRate = 1.10209574256
 
-const connection = new Connection('https://maximum-solemn-leaf.solana-mainnet.quiknode.pro/c5e7c18c70ada6d8b4d81b0d2d5255dac972c2c2/');
+const connection = new Connection('https://maximum-solemn-leaf.solana-mainnet.quiknode.pro/xxxxxxx/');
 
 const wallet = new Wallet(Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY || '')));
 
