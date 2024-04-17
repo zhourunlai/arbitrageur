@@ -4,7 +4,7 @@ const infMint = '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm';
 const jitosolMint = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn';
 
 const solInitAmount = 100000000000;
-const jitosolRate = 1.10209574256
+const jitosolRate = 1.10261794793
 
 // 1. https://jup.ag/swap/SOL-INF
 function step1_On_Jup(solAmount) {
