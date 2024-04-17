@@ -2,6 +2,9 @@ import { Connection, Keypair, VersionedTransaction } from '@solana/web3.js';
 import fetch from 'cross-fetch';
 import { Wallet } from '@project-serum/anchor';
 import bs58 from 'bs58';
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const solMint = 'So11111111111111111111111111111111111111112';
 const infMint = '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm';
@@ -9,7 +12,7 @@ const jitosolMint = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn';
 const solInitAmount = 100000000000;
 const jitosolRate = 1.10261794793
 
-const connection = new Connection('https://maximum-solemn-leaf.solana-mainnet.quiknode.pro/xxxxxxx/');
+const connection = new Connection(process.env.SOLANA_RPC || '');
 
 const wallet = new Wallet(Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY || '')));
 
@@ -27,6 +30,7 @@ async function step1_On_Jup(solAmount) {
     ).json();
     console.log({ quoteResponse })
 
+    // https://station.jup.ag/docs/apis/swap-api
     const { swapTransaction } = await (
         await fetch('https://quote-api.jup.ag/v6/swap', {
         method: 'POST',
