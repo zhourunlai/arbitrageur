@@ -14,7 +14,7 @@ const connection = new Connection(process.env.SOLANA_RPC || '');
 const wallet = new Wallet(Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY || '')));
 
 
-async function step1_On_Jup(solAmount: number) {
+export async function buildJupTx(solAmount: number) {
     // Swapping SOL to INF
     const quoteResponse = await (
         await fetch('https://quote-api.jup.ag/v6/quote?' + new URLSearchParams({
@@ -40,7 +40,6 @@ async function step1_On_Jup(solAmount: number) {
                 quoteResponse,
                 userPublicKey: wallet.publicKey.toString(),
                 dynamicComputeUnitLimit: true,
-                prioritizationFeeLamports: 'auto'
             })
         })
     ).json();
@@ -51,18 +50,19 @@ async function step1_On_Jup(solAmount: number) {
 
     transaction.sign([wallet.payer]);
 
-    const rawTransaction = transaction.serialize()
-    const txid = await connection.sendRawTransaction(rawTransaction, {
-        skipPreflight: true,
-        maxRetries: 2
-    });
-    await connection.confirmTransaction(txid);
-    console.log(`https://solscan.io/tx/${txid}`);
+    return transaction
+    // const rawTransaction = transaction.serialize()
+    // const txid = await connection.sendRawTransaction(rawTransaction, {
+    //     skipPreflight: true,
+    //     maxRetries: 2
+    // });
+    // await connection.confirmTransaction(txid);
+    // console.log(`https://solscan.io/tx/${txid}`);
 
-    step2_On_Sanctum(quoteResponse.outAmount);
+    // step2_On_Sanctum(quoteResponse.outAmount);
 }
 
-async function step2_On_Sanctum(infAmount: number) {
+export async function buildSanctumTx(infAmount: number) {
     // Swapping INF to jitoSOL
     const quoteResponse = await (
         await fetch('https://sanctum-s-api.fly.dev/v1/swap/quote?' + new URLSearchParams({
@@ -102,17 +102,22 @@ async function step2_On_Sanctum(infAmount: number) {
 
     transaction.sign([wallet.payer]);
 
-    const rawTransaction = transaction.serialize()
-    const txid = await connection.sendRawTransaction(rawTransaction, {
-        skipPreflight: true,
-        maxRetries: 2
-    });
-    await connection.confirmTransaction(txid);
-    console.log(`https://solscan.io/tx/${txid}`);
+    return transaction
+
+    // const rawTransaction = transaction.serialize()
+    // const txid = await connection.sendRawTransaction(rawTransaction, {
+    //     skipPreflight: true,
+    //     maxRetries: 2
+    // });
+    // await connection.confirmTransaction(txid);
+    // console.log(`https://solscan.io/tx/${txid}`);
 }
 
-// run both step1 and step2
-step1_On_Jup(oneAmount * 0.001)
+if (import.meta.path == Bun.main) {
+    // run both step1 and step2
+    // buildJupTx(oneAmount * 0.001)
 
-// only run step2
-// step2_On_Sanctum( oneAmount * 0.001 )
+    // only run step2
+    // step2_On_Sanctum( oneAmount * 0.001 )
+}
+
