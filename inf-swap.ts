@@ -28,24 +28,25 @@ async function step1_On_Jup(solAmount) {
           })
         )
     ).json();
-    console.log({ quoteResponse })
+    console.log(quoteResponse);
 
     // https://station.jup.ag/docs/apis/swap-api
     const { swapTransaction } = await (
-        await fetch('https://quote-api.jup.ag/v6/swap', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            quoteResponse,
-            userPublicKey: wallet.publicKey.toString(),
-            wrapAndUnwrapSol: true,
-            // feeAccount is optional. Use if you want to charge a fee.  feeBps must have been passed in /quote API.
-            // feeAccount: "fee_account_public_key"
-        })
+            await fetch('https://quote-api.jup.ag/v6/swap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                quoteResponse,
+                userPublicKey: wallet.publicKey.toString(),
+                wrapAndUnwrapSol: true,
+                // feeAccount is optional. Use if you want to charge a fee.  feeBps must have been passed in /quote API.
+                // feeAccount: "fee_account_public_key"
+            })
         })
     ).json();
+    console.log(swapTransaction);
 
     const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
     var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
@@ -62,49 +63,52 @@ async function step1_On_Jup(solAmount) {
     console.log(`https://solscan.io/tx/${txid}`);
 }
 
-step1_On_Jup( solInitAmount / 100000)
+async function step2_On_Sanctum(infAmount) {
+    // Swapping INF to jitoSOL
+    const quoteResponse = await (
+        await fetch('https://sanctum-s-api.fly.dev/v1/swap/quote?' + new URLSearchParams({
+            input: infMint,
+            outputLstMint: jitosolMint,
+            amount: infAmount,
+            mode: 'ExactIn'
+          })
+        )
+    ).json();
+    console.log(quoteResponse);
 
-// async function step2_On_Sanctum(infAmount) {
-//     // Swapping INF to jitoSOL
-//     const quoteResponse = await (
-//         await fetch('https://sanctum-s-api.fly.dev/v1/swap/quote?' + new URLSearchParams({
-//             input: infMint,
-//             outputLstMint: jitosolMint,
-//             amount: infAmount,
-//             mode: 'ExactIn'
-//           })
-//         )
-//     ).json();
-//     console.log({ quoteResponse })
+    // https://sanctum-s-api.fly.dev/#/LST%20Swaps/handle_swap
+    const swapTransaction = await (
+        await fetch('https://sanctum-s-api.fly.dev/v1/swap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                input: infMint,
+                outputLstMint: jitosolMint,
+                amount: quoteResponse.inAmount,
+                quotedAmount: quoteResponse.outAmount,
+                swapSrc: quoteResponse.swapSrc,
+                mode: 'ExactIn',
+                signer: wallet.publicKey.toString(),
+            })
+        })
+    ).json();
+    console.log(swapTransaction);
 
-//     // https://sanctum-s-api.fly.dev/#/LST%20Swaps/handle_swap
-//     const { swapTransaction } = await (
-//         await fetch('https://sanctum-s-api.fly.dev/v1/swap', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({
-//             quoteResponse,
-//             amount: infAmount,
-//             userPublicKey: wallet.publicKey.toString(),
-//             wrapAndUnwrapSol: true,
-//             swapSrc: 'Stakedex',
-//         })
-//         })
-//     ).json();
+    // var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+    // console.log(transaction);
 
-//     const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
-//     var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-//     console.log(transaction);
+    // transaction.sign([wallet.payer]);
 
-//     transaction.sign([wallet.payer]);
+    // const rawTransaction = transaction.serialize()
+    // const txid = await connection.sendRawTransaction(rawTransaction, {
+    // skipPreflight: true,
+    // maxRetries: 2
+    // });
+    // await connection.confirmTransaction(txid);
+    // console.log(`https://solscan.io/tx/${txid}`);
+}
 
-//     const rawTransaction = transaction.serialize()
-//     const txid = await connection.sendRawTransaction(rawTransaction, {
-//     skipPreflight: true,
-//     maxRetries: 2
-//     });
-//     await connection.confirmTransaction(txid);
-//     console.log(`https://solscan.io/tx/${txid}`);
-// }
+// step1_On_Jup( solInitAmount / 100000)
+step2_On_Sanctum( 84878 )
