@@ -9,7 +9,8 @@ dotenv.config()
 const solMint = 'So11111111111111111111111111111111111111112';
 const infMint = '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm';
 const jitosolMint = 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn';
-const solInitAmount = 100000000000;
+const oneAmount = 1000000000;
+const slippageBps = '30'
 const jitosolRate = 1.10261794793
 
 const connection = new Connection(process.env.SOLANA_RPC || '');
@@ -24,11 +25,13 @@ async function step1_On_Jup(solAmount) {
             inputMint: solMint,
             outputMint: infMint,
             amount: solAmount,
-            slippageBps: '30',
+            slippageBps: slippageBps,
           })
         )
     ).json();
-    console.log(quoteResponse);
+    // console.log(quoteResponse);
+
+    console.log(`Swapping ${solAmount/oneAmount} SOL to ${quoteResponse.outAmount/oneAmount} INF`);
 
     // https://station.jup.ag/docs/apis/swap-api
     const { swapTransaction } = await (
@@ -40,17 +43,15 @@ async function step1_On_Jup(solAmount) {
             body: JSON.stringify({
                 quoteResponse,
                 userPublicKey: wallet.publicKey.toString(),
-                wrapAndUnwrapSol: true,
-                // feeAccount is optional. Use if you want to charge a fee.  feeBps must have been passed in /quote API.
-                // feeAccount: "fee_account_public_key"
+                dynamicComputeUnitLimit: true,
+                prioritizationFeeLamports: 'auto'
             })
         })
     ).json();
-    console.log(swapTransaction);
+    // console.log(swapTransaction);
 
     const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
     var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-    console.log(transaction);
 
     transaction.sign([wallet.payer]);
 
@@ -61,6 +62,8 @@ async function step1_On_Jup(solAmount) {
     });
     await connection.confirmTransaction(txid);
     console.log(`https://solscan.io/tx/${txid}`);
+
+    step2_On_Sanctum( quoteResponse.outAmount );
 }
 
 async function step2_On_Sanctum(infAmount) {
@@ -74,7 +77,9 @@ async function step2_On_Sanctum(infAmount) {
           })
         )
     ).json();
-    console.log(quoteResponse);
+    // console.log(quoteResponse);
+
+    console.log(`Swapping ${infAmount/oneAmount} INF to ${quoteResponse.outAmount/oneAmount} jitoSOL`);
 
     // https://sanctum-s-api.fly.dev/#/LST%20Swaps/handle_swap
     const swapTransaction = await (
@@ -94,21 +99,24 @@ async function step2_On_Sanctum(infAmount) {
             })
         })
     ).json();
-    console.log(swapTransaction);
+    // console.log(swapTransaction);
 
-    // var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-    // console.log(transaction);
+    const swapTransactionBuf = Buffer.from(swapTransaction.tx, 'base64');
+    var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-    // transaction.sign([wallet.payer]);
+    transaction.sign([wallet.payer]);
 
-    // const rawTransaction = transaction.serialize()
-    // const txid = await connection.sendRawTransaction(rawTransaction, {
-    // skipPreflight: true,
-    // maxRetries: 2
-    // });
-    // await connection.confirmTransaction(txid);
-    // console.log(`https://solscan.io/tx/${txid}`);
+    const rawTransaction = transaction.serialize()
+    const txid = await connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: true,
+        maxRetries: 2
+    });
+    await connection.confirmTransaction(txid);
+    console.log(`https://solscan.io/tx/${txid}`);
 }
 
-// step1_On_Jup( solInitAmount / 100000)
-step2_On_Sanctum( 84878 )
+// run both step1 and step2
+step1_On_Jup( oneAmount * 0.001 )
+
+// only run step2
+// step2_On_Sanctum( oneAmount * 0.001 )
